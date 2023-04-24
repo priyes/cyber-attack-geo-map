@@ -1,0 +1,145 @@
+<head>
+    <style>
+        body {
+            margin: 0;
+        }
+    </style>
+
+    <script src="//unpkg.com/d3-dsv"></script>
+    <script src="//unpkg.com/index-array-by"></script>
+    <script src="//unpkg.com/globe.gl"></script>
+</head>
+
+<body>
+    <div id="globeViz"></div>
+    <script>
+
+        const COUNTRY = 'United States';
+        const OPACITY = 0.3;
+        const myGlobe = Globe()
+            (document.getElementById('globeViz'))
+            .globeImageUrl('//unpkg.com/three-globe/example/img/earth-night.jpg')
+            .pointOfView({ lat: 19.01, lng: 72.85, altitude: 2 })
+            .arcLabel(d => `${d.fromLocation} to ${d.toLocation}: ${d.type}`)
+            .arcStartLat(d => +d.startLat)
+            .arcStartLng(d => +d.startLng)
+            .arcEndLat(d => +d.endLat)
+            .arcEndLng(d => +d.endLng)
+            .arcDashLength(50)
+            .arcDashInitialGap(() => Math.random())
+            .arcsTransitionDuration(0)
+            .arcColor(d => ["#8B0000", `#000080`])
+            .arcStroke(1)
+            .arcDashLength(0.4)
+            .arcDashGap(0.2)
+            .arcDashAnimateTime(1500)
+            .pointColor(() => 'orange')
+            .pointAltitude(0)
+            .pointRadius(0.02)
+            .pointsMerge(true);
+
+        const attacks = [
+            {
+                from: {
+                    "location": "Mumbai",
+                    "lat": 19.0169903757,
+                    "lng": 72.8569892974,
+                },
+                to: {
+                    "location": "London, UK",
+                    "lat": 51.4999947297,
+                    "lng": -0.11672184386
+                },
+                "type": "Phishing",
+                "date": "2023-04-22T15:45:00Z"
+            },
+            {
+                from: {
+                    "location": "New York, USA",
+                    "lat": 40.7128,
+                    "lng": -74.0060,
+                },
+                to: {
+                    "location": "Sydney, Australia",
+                    "lat": -33.865143,
+                    "lng": 151.2099
+                },
+                "type": "Ransomware",
+                "date": "2023-04-23T12:30:00Z"
+            },
+            {
+                from: {
+                    "location": "Beijing, China",
+                    "lat": 39.9042,
+                    "lng": 116.4074,
+                },
+                to: {
+                    "location": "Moscow, Russia",
+                    "lat": 55.7558,
+                    "lng": 37.6173
+                },
+                "type": "DDoS",
+                "date": "2023-04-24T08:15:00Z"
+            },
+            {
+                from: {
+                    "location": "Paris, France",
+                    "lat": 48.8566,
+                    "lng": 2.3522,
+                },
+                to: {
+                    "location": "Rio de Janeiro, Brazil",
+                    "lat": -22.9068,
+                    "lng": -43.1729
+                },
+                "type": "Malware",
+                "date": "2023-04-25T20:00:00Z"
+            }
+
+        ];
+
+        let pointData = []
+
+        Promise.all([
+            fetch('world.geojson').then(res => res.json()).then(places => {
+                myGlobe.labelsData(places.features)
+                    .labelLat(d => d.properties.latitude)
+                    .labelLng(d => d.properties.longitude)
+                    .labelText(d => d.properties.name)
+                    .labelSize(d => Math.sqrt(d.properties.pop_max) * 4e-4)
+                    .labelDotRadius(d => Math.sqrt(d.properties.pop_max) * 4e-4)
+                    .labelColor(() => 'rgb(235,69,95)')
+                    .labelResolution(2)
+
+                pointData = places.features.map(({ properties }) => {
+                    return ({
+                        location: properties.ls_name,
+                        lat: properties.latitude,
+                        lng: properties.longitude
+                    })
+                })
+
+                const mappedAttacks = attacks.map(({ from, to, type }) => {
+                    return ({
+                        startLat: from.lat,
+                        startLng: from.lng,
+                        endLat: to.lat,
+                        endLng: to.lng,
+                        fromLocation: from.location,
+                        toLocation: to.location,
+                        type
+
+                    })
+                })
+                
+                myGlobe
+                    .pointsData(pointData)
+                    .arcsData(mappedAttacks)
+            })
+        ])
+
+
+    </script>
+
+
+</body>
